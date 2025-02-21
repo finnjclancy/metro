@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>History</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+  <script>
+    // Register ChartDataLabels plugin
+    Chart.register(ChartDataLabels);
+  </script>
+</head>
+<body>
+  <h1 style="text-align: center;">Weekly Food History</h1>
+  <div style="text-align: center; margin-bottom: 10px;">
+    <label for="start-date">Select start date:</label>
+    <input type="date" id="start-date">
+    <button id="show-week-btn">Show Week</button>
+  </div>
+  <canvas id="weeklyChart" width="800" height="400"></canvas>
+  <div id="day-details" class="day-details" style="display: none;">
+    <h2>Meal Details for <span id="selected-day"></span></h2>
+    <ul id="food-items"></ul>
+  </div>
+  <div class="footer-nav">
+    <button onclick="window.location.href='/'">Log Food</button>
+    <button onclick="window.location.href='/history'">History</button>
+  </div>
+  <script>
+    async function fetchHistory() {
+      const response = await fetch("/get_history");
+      const data = await response.json();
+      return data;
+    }
+
+    function getWeekDates(startDate) {
+      const dates = [];
+      const start = new Date(startDate);
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(start);
+        d.setDate(start.getDate() + i);
+        dates.push(d.toISOString().slice(0,10));
+      }
+      return dates;
+    }
+
+    async function drawChart() {
+      const data = await fetchHistory();
+      const startDateInput = document.getElementById("start-date").value;
+      let start = new Date();
+      // Default to Monday of this week
+      const day = start.getDay();
+      const diff = start.getDate() - day + (day === 0 ? -6 : 1);
+      start.setDate(diff);
+      if (startDateInput) {
+        start = new Date(startDateInput);
+      }
+      const weekDates = getWeekDates(start);
+      const labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+      const proteinData = [];
+      const carbsData = [];
+      const fatData = [];
+      weekDates.forEach(date => {
+        const dayData = data[date] || { protein: 0, carbs: 0, fat: 0, calories: 0, items: [] };
+        proteinData.push(dayData.protein);
+        carbsData.push(dayData.carbs);
+        fatData.push(dayData.fat);
+      });
+      const ctx = document.getElementById("weeklyChart").getContext("2d");
+      if (window.weeklyChart) {
+        window.weeklyChart.destroy();
+      }
+      window.weeklyChart = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: labels,
+          datasets: [
+            { label: "Protein (g)", data: proteinData, backgroundColor: "red" },
+            { label: "Carbs (g)", data: carbsData, backgroundColor: "blue" },
+            { label: "Fat (g)", data: fatData, backgroundColor: "gold" }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            datalabels: {
+              anchor: "end",
+              align: "end",
+              color: "black",
+              formatter: value => value === 0 ? "0" : value
+            }
+          },
+          onClick: (evt, elements) => {
+            if (!elements.length) return;
+            const index = elements[0].index;
+            const clickedDate = weekDates[index];
+            showDayDetails(clickedDate, data[clickedDate] || null);
+          },
+          scales: {
+            x: { stacked: true },
+            y: { stacked: true, title: { display: true, text: "Total Calories" } }
+          }
+        }
+      });
+    }
+
+    function showDayDetails(day, dayData) {
+      document.getElementById("day-details").style.display = "block";
+      document.getElementById("selected-day").innerText = day;
+      const foodItemsUl = document.getElementById("food-items");
+      foodItemsUl.innerHTML = "";
+      if (!dayData || !dayData.items || dayData.items.length === 0) {
+        const li = document.createElement("li");
+        li.innerText = "No data for this day.";
+        foodItemsUl.appendChild(li);
+        return;
+      }
+      dayData.items.forEach(item => {
+        const li = document.createElement("li");
+        li.innerText = `${item.food} - ${item.calories} cals, ${item.protein} g protein, ${item.carbs} g carbs, ${item.fat} g fat`;
+        foodItemsUl.appendChild(li);
+      });
+    }
+
+    document.getElementById("show-week-btn").addEventListener("click", drawChart);
+    window.addEventListener("DOMContentLoaded", drawChart);
+  </script>
+</body>
+</html>

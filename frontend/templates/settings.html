@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Settings</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <h1 style="text-align: center;">Settings</h1>
+
+  <!-- This is the distinct settings layout -->
+  <div class="settings-display">
+    <h2>Your Current Settings</h2>
+    <div class="settings-row">
+      <div class="settings-section">
+        <h3>Personal Info</h3>
+        <ul id="personal-info">
+          <li>Name: <span id="setting-name">John Doe</span></li>
+          <li>Age: <span id="setting-age">N/A</span></li>
+          <li>Email: <span id="setting-email">N/A</span></li>
+          <li>Height: <span id="setting-height">N/A</span></li>
+          <li>Weight: <span id="setting-weight">N/A</span></li>
+        </ul>
+      </div>
+      <div class="settings-section">
+        <h3>Appearance</h3>
+        <ul id="appearance-info">
+          <li>Theme: <span id="setting-theme">Light</span></li>
+          <li>Font Size: <span id="setting-font">Medium</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="chat-container">
+    <div id="settings-chat-log" class="chat-log"></div>
+    <div class="input-container">
+      <textarea id="settings-input" rows="2" placeholder="Ask about your settings..."></textarea>
+      <button id="settings-send-btn">Send</button>
+    </div>
+  </div>
+
+  <div class="footer-nav">
+    <button onclick="window.location.href='/'">Log Food</button>
+    <button onclick="window.location.href='/history'">History</button>
+    <button onclick="window.location.href='/settings'">Settings</button>
+  </div>
+
+  <script src="{{ url_for('static', filename='settings.js') }}"></script>
+</body>
+</html>
